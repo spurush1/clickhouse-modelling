@@ -29,9 +29,9 @@ FROM numbers(50000);
 
 INSERT INTO po_line_a
 SELECT
-    (number % 50000) + 1                            AS po_id,
+    intDiv(number, 10) + 1                          AS po_id,
     (number % 10) + 1                               AS line_id,
-    ((number % 50000) % 12500) + 1                  AS order_id,
+    (intDiv(number, 10) % 12500) + 1                AS order_id,
     (rand() % 1000) + 1                             AS product_id,
     (rand() % 100) + 1                              AS quantity,
     round(1 + rand() % 999, 2)                      AS unit_price,
@@ -49,26 +49,35 @@ FROM order_a;
 -- Build one row per PO with all its lines packed into arrays
 INSERT INTO purchase_order_b
 SELECT
-    po_id,
-    any(order_id)                  AS order_id,
-    any(vendor_id)                 AS vendor_id,
-    any(po_total)                  AS po_total,
-    any(po_date)                   AS po_date,
-    any(po_status)                 AS po_status,
-    groupArray(line_id)            AS `lines.line_id`,
-    groupArray(product_id)         AS `lines.product_id`,
-    groupArray(quantity)           AS `lines.quantity`,
-    groupArray(unit_price)         AS `lines.unit_price`,
-    groupArray(line_amount)        AS `lines.line_amount`
+    sub_po_id                         AS po_id,
+    any(sub_order_id)                 AS order_id,
+    any(sub_vendor_id)                AS vendor_id,
+    any(sub_po_total)                 AS po_total,
+    any(sub_po_date)                  AS po_date,
+    any(sub_po_status)                AS po_status,
+    groupArray(sub_line_id)           AS `lines.line_id`,
+    groupArray(sub_product_id)        AS `lines.product_id`,
+    groupArray(sub_quantity)          AS `lines.quantity`,
+    groupArray(sub_unit_price)        AS `lines.unit_price`,
+    groupArray(sub_line_amount)       AS `lines.line_amount`
 FROM (
     SELECT
-        po_id, order_id, vendor_id, po_total, po_date, po_status,
-        line_id, product_id, quantity, unit_price, line_amount
-    FROM po_line_a
-    JOIN purchase_order_a USING (po_id)
-    ORDER BY po_id, line_id
+        l.po_id        AS sub_po_id,
+        p.order_id     AS sub_order_id,
+        p.vendor_id    AS sub_vendor_id,
+        p.po_total     AS sub_po_total,
+        p.po_date      AS sub_po_date,
+        p.po_status    AS sub_po_status,
+        l.line_id      AS sub_line_id,
+        l.product_id   AS sub_product_id,
+        l.quantity     AS sub_quantity,
+        l.unit_price   AS sub_unit_price,
+        l.line_amount  AS sub_line_amount
+    FROM po_line_a AS l
+    JOIN purchase_order_a AS p ON l.po_id = p.po_id
+    ORDER BY l.po_id, l.line_id
 )
-GROUP BY po_id;
+GROUP BY sub_po_id;
 
 -- ── Pattern C ────────────────────────────────────────────────────────────────
 

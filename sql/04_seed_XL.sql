@@ -30,9 +30,9 @@ FROM numbers(10000000);
 -- Insert lines in 10 batches of 10M to keep memory manageable
 INSERT INTO po_line_a
 SELECT
-    (number % 10000000) + 1                         AS po_id,
+    intDiv(number, 10) + 1                          AS po_id,
     (number % 10) + 1                               AS line_id,
-    ((number % 10000000) % 2500000) + 1             AS order_id,
+    (intDiv(number, 10) % 2500000) + 1              AS order_id,
     (rand() % 1000) + 1                             AS product_id,
     (rand() % 100) + 1                              AS quantity,
     round(1 + rand() % 999, 2)                      AS unit_price,
@@ -43,18 +43,156 @@ FROM numbers(100000000);
 
 INSERT INTO order_b SELECT order_id, customer_id, order_date, region, order_status, version FROM order_a;
 
+-- Insert Pattern B in 10 batches of 1M POs to stay within 16 GB memory
 INSERT INTO purchase_order_b
-SELECT
-    po_id, any(order_id), any(vendor_id), any(po_total), any(po_date), any(po_status),
-    groupArray(line_id), groupArray(product_id), groupArray(quantity),
-    groupArray(unit_price), groupArray(line_amount)
+SELECT sub_po_id, any(sub_order_id), any(sub_vendor_id), any(sub_po_total),
+    any(sub_po_date), any(sub_po_status),
+    groupArray(sub_line_id), groupArray(sub_product_id), groupArray(sub_quantity),
+    groupArray(sub_unit_price), groupArray(sub_line_amount)
 FROM (
-    SELECT p.po_id, p.order_id, p.vendor_id, p.po_total, p.po_date, p.po_status,
-           l.line_id, l.product_id, l.quantity, l.unit_price, l.line_amount
-    FROM po_line_a l JOIN purchase_order_a p USING (po_id) ORDER BY po_id, line_id
+    SELECT l.po_id AS sub_po_id, p.order_id AS sub_order_id, p.vendor_id AS sub_vendor_id,
+           p.po_total AS sub_po_total, p.po_date AS sub_po_date, p.po_status AS sub_po_status,
+           l.line_id AS sub_line_id, l.product_id AS sub_product_id, l.quantity AS sub_quantity,
+           l.unit_price AS sub_unit_price, l.line_amount AS sub_line_amount
+    FROM po_line_a AS l JOIN purchase_order_a AS p ON l.po_id = p.po_id
+    WHERE l.po_id BETWEEN 1 AND 1000000
 )
-GROUP BY po_id
-SETTINGS max_memory_usage = 20000000000;
+GROUP BY sub_po_id;
+
+INSERT INTO purchase_order_b
+SELECT sub_po_id, any(sub_order_id), any(sub_vendor_id), any(sub_po_total),
+    any(sub_po_date), any(sub_po_status),
+    groupArray(sub_line_id), groupArray(sub_product_id), groupArray(sub_quantity),
+    groupArray(sub_unit_price), groupArray(sub_line_amount)
+FROM (
+    SELECT l.po_id AS sub_po_id, p.order_id AS sub_order_id, p.vendor_id AS sub_vendor_id,
+           p.po_total AS sub_po_total, p.po_date AS sub_po_date, p.po_status AS sub_po_status,
+           l.line_id AS sub_line_id, l.product_id AS sub_product_id, l.quantity AS sub_quantity,
+           l.unit_price AS sub_unit_price, l.line_amount AS sub_line_amount
+    FROM po_line_a AS l JOIN purchase_order_a AS p ON l.po_id = p.po_id
+    WHERE l.po_id BETWEEN 1000001 AND 2000000
+)
+GROUP BY sub_po_id;
+
+INSERT INTO purchase_order_b
+SELECT sub_po_id, any(sub_order_id), any(sub_vendor_id), any(sub_po_total),
+    any(sub_po_date), any(sub_po_status),
+    groupArray(sub_line_id), groupArray(sub_product_id), groupArray(sub_quantity),
+    groupArray(sub_unit_price), groupArray(sub_line_amount)
+FROM (
+    SELECT l.po_id AS sub_po_id, p.order_id AS sub_order_id, p.vendor_id AS sub_vendor_id,
+           p.po_total AS sub_po_total, p.po_date AS sub_po_date, p.po_status AS sub_po_status,
+           l.line_id AS sub_line_id, l.product_id AS sub_product_id, l.quantity AS sub_quantity,
+           l.unit_price AS sub_unit_price, l.line_amount AS sub_line_amount
+    FROM po_line_a AS l JOIN purchase_order_a AS p ON l.po_id = p.po_id
+    WHERE l.po_id BETWEEN 2000001 AND 3000000
+)
+GROUP BY sub_po_id;
+
+INSERT INTO purchase_order_b
+SELECT sub_po_id, any(sub_order_id), any(sub_vendor_id), any(sub_po_total),
+    any(sub_po_date), any(sub_po_status),
+    groupArray(sub_line_id), groupArray(sub_product_id), groupArray(sub_quantity),
+    groupArray(sub_unit_price), groupArray(sub_line_amount)
+FROM (
+    SELECT l.po_id AS sub_po_id, p.order_id AS sub_order_id, p.vendor_id AS sub_vendor_id,
+           p.po_total AS sub_po_total, p.po_date AS sub_po_date, p.po_status AS sub_po_status,
+           l.line_id AS sub_line_id, l.product_id AS sub_product_id, l.quantity AS sub_quantity,
+           l.unit_price AS sub_unit_price, l.line_amount AS sub_line_amount
+    FROM po_line_a AS l JOIN purchase_order_a AS p ON l.po_id = p.po_id
+    WHERE l.po_id BETWEEN 3000001 AND 4000000
+)
+GROUP BY sub_po_id;
+
+INSERT INTO purchase_order_b
+SELECT sub_po_id, any(sub_order_id), any(sub_vendor_id), any(sub_po_total),
+    any(sub_po_date), any(sub_po_status),
+    groupArray(sub_line_id), groupArray(sub_product_id), groupArray(sub_quantity),
+    groupArray(sub_unit_price), groupArray(sub_line_amount)
+FROM (
+    SELECT l.po_id AS sub_po_id, p.order_id AS sub_order_id, p.vendor_id AS sub_vendor_id,
+           p.po_total AS sub_po_total, p.po_date AS sub_po_date, p.po_status AS sub_po_status,
+           l.line_id AS sub_line_id, l.product_id AS sub_product_id, l.quantity AS sub_quantity,
+           l.unit_price AS sub_unit_price, l.line_amount AS sub_line_amount
+    FROM po_line_a AS l JOIN purchase_order_a AS p ON l.po_id = p.po_id
+    WHERE l.po_id BETWEEN 4000001 AND 5000000
+)
+GROUP BY sub_po_id;
+
+INSERT INTO purchase_order_b
+SELECT sub_po_id, any(sub_order_id), any(sub_vendor_id), any(sub_po_total),
+    any(sub_po_date), any(sub_po_status),
+    groupArray(sub_line_id), groupArray(sub_product_id), groupArray(sub_quantity),
+    groupArray(sub_unit_price), groupArray(sub_line_amount)
+FROM (
+    SELECT l.po_id AS sub_po_id, p.order_id AS sub_order_id, p.vendor_id AS sub_vendor_id,
+           p.po_total AS sub_po_total, p.po_date AS sub_po_date, p.po_status AS sub_po_status,
+           l.line_id AS sub_line_id, l.product_id AS sub_product_id, l.quantity AS sub_quantity,
+           l.unit_price AS sub_unit_price, l.line_amount AS sub_line_amount
+    FROM po_line_a AS l JOIN purchase_order_a AS p ON l.po_id = p.po_id
+    WHERE l.po_id BETWEEN 5000001 AND 6000000
+)
+GROUP BY sub_po_id;
+
+INSERT INTO purchase_order_b
+SELECT sub_po_id, any(sub_order_id), any(sub_vendor_id), any(sub_po_total),
+    any(sub_po_date), any(sub_po_status),
+    groupArray(sub_line_id), groupArray(sub_product_id), groupArray(sub_quantity),
+    groupArray(sub_unit_price), groupArray(sub_line_amount)
+FROM (
+    SELECT l.po_id AS sub_po_id, p.order_id AS sub_order_id, p.vendor_id AS sub_vendor_id,
+           p.po_total AS sub_po_total, p.po_date AS sub_po_date, p.po_status AS sub_po_status,
+           l.line_id AS sub_line_id, l.product_id AS sub_product_id, l.quantity AS sub_quantity,
+           l.unit_price AS sub_unit_price, l.line_amount AS sub_line_amount
+    FROM po_line_a AS l JOIN purchase_order_a AS p ON l.po_id = p.po_id
+    WHERE l.po_id BETWEEN 6000001 AND 7000000
+)
+GROUP BY sub_po_id;
+
+INSERT INTO purchase_order_b
+SELECT sub_po_id, any(sub_order_id), any(sub_vendor_id), any(sub_po_total),
+    any(sub_po_date), any(sub_po_status),
+    groupArray(sub_line_id), groupArray(sub_product_id), groupArray(sub_quantity),
+    groupArray(sub_unit_price), groupArray(sub_line_amount)
+FROM (
+    SELECT l.po_id AS sub_po_id, p.order_id AS sub_order_id, p.vendor_id AS sub_vendor_id,
+           p.po_total AS sub_po_total, p.po_date AS sub_po_date, p.po_status AS sub_po_status,
+           l.line_id AS sub_line_id, l.product_id AS sub_product_id, l.quantity AS sub_quantity,
+           l.unit_price AS sub_unit_price, l.line_amount AS sub_line_amount
+    FROM po_line_a AS l JOIN purchase_order_a AS p ON l.po_id = p.po_id
+    WHERE l.po_id BETWEEN 7000001 AND 8000000
+)
+GROUP BY sub_po_id;
+
+INSERT INTO purchase_order_b
+SELECT sub_po_id, any(sub_order_id), any(sub_vendor_id), any(sub_po_total),
+    any(sub_po_date), any(sub_po_status),
+    groupArray(sub_line_id), groupArray(sub_product_id), groupArray(sub_quantity),
+    groupArray(sub_unit_price), groupArray(sub_line_amount)
+FROM (
+    SELECT l.po_id AS sub_po_id, p.order_id AS sub_order_id, p.vendor_id AS sub_vendor_id,
+           p.po_total AS sub_po_total, p.po_date AS sub_po_date, p.po_status AS sub_po_status,
+           l.line_id AS sub_line_id, l.product_id AS sub_product_id, l.quantity AS sub_quantity,
+           l.unit_price AS sub_unit_price, l.line_amount AS sub_line_amount
+    FROM po_line_a AS l JOIN purchase_order_a AS p ON l.po_id = p.po_id
+    WHERE l.po_id BETWEEN 8000001 AND 9000000
+)
+GROUP BY sub_po_id;
+
+INSERT INTO purchase_order_b
+SELECT sub_po_id, any(sub_order_id), any(sub_vendor_id), any(sub_po_total),
+    any(sub_po_date), any(sub_po_status),
+    groupArray(sub_line_id), groupArray(sub_product_id), groupArray(sub_quantity),
+    groupArray(sub_unit_price), groupArray(sub_line_amount)
+FROM (
+    SELECT l.po_id AS sub_po_id, p.order_id AS sub_order_id, p.vendor_id AS sub_vendor_id,
+           p.po_total AS sub_po_total, p.po_date AS sub_po_date, p.po_status AS sub_po_status,
+           l.line_id AS sub_line_id, l.product_id AS sub_product_id, l.quantity AS sub_quantity,
+           l.unit_price AS sub_unit_price, l.line_amount AS sub_line_amount
+    FROM po_line_a AS l JOIN purchase_order_a AS p ON l.po_id = p.po_id
+    WHERE l.po_id BETWEEN 9000001 AND 10000000
+)
+GROUP BY sub_po_id;
 
 INSERT INTO po_flat_c
 SELECT l.po_id, l.line_id, l.order_id, p.vendor_id, p.po_total, p.po_date, p.po_status,

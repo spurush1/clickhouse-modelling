@@ -57,7 +57,7 @@ SELECT /* bench:Q5:A:TIER */
     sum(l.line_amount)                                          AS monthly_revenue
 FROM po_line_a AS l FINAL
 JOIN purchase_order_a AS p ON l.po_id = p.po_id
-    SETTINGS join_algorithm = 'full_sorting_merge'
 GROUP BY month, region, p.vendor_id
 ORDER BY month, monthly_revenue DESC
-LIMIT 100;
+LIMIT 100
+SETTINGS join_algorithm = 'full_sorting_merge';
